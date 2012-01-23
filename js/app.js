@@ -35,9 +35,41 @@ App.Calc.DriveNow = App.Calc.extend({
 
 App.Calc.ZebraMobil = App.Calc.extend({
   name: "ZebraMobil",
+  
   pricePerKm: 0,
+  pricePerKmAfter150: 10,
+  
   pricePerMinDrive: 25,
-  pricePerMinPark: 10
+  
+  pricePerMinPark: 10,
+  pricePerMinParkCheap: 3,
+  
+  _calcDistance: function(distance) {
+    if (distance <= 150) { 
+      return this._super(distance);
+    } else {
+      return this._super(150) + ((distance-150) * this.get('pricePerKmAfter150'));
+    }
+  },
+  /*
+  _calcTime: function(timeDriven, timeParked) {
+    var sevenHours = (7 * 60);
+    if ((timeDriven + timeParked) <= sevenHours) { 
+      // used car less than 7h
+      return this._super(timeDriven, timeParked);
+    } else {
+      // wieviel parkzeit ist zu 3c/min abrechenbar
+      var timeParkedCheap = (timeDriven + timeParked) - sevenHours;
+      console.log(timeDriven);
+      console.log(timeParked);
+      console.log(timeParkedCheap);
+      return ((timeDriven * this.get('pricePerMinDrive')) + 
+        ((timeParked - timeParkedCheap) * this.get('pricePerMinPark')) + 
+        (timeParkedCheap * this.get('pricePerMinParkCheap')) 
+      );
+    }
+  }*/
+  
 });
 
 // create() makes instances
@@ -53,10 +85,9 @@ App.calcController = Ember.Object.create({
   timeTotal: null,
   timeParked: null,
   timeDriven: function() {
-    if (!this.get('timeTotal') || !this.get('timeParked')) {
-      return;
+    if (this.get('timeTotal') && this.get('timeParked')) {
+      return this.get('timeTotal') - this.get('timeParked');
     }
-    return this.get('timeTotal') - this.get('timeParked');
   },
   
   results: function() {
