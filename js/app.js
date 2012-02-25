@@ -1,54 +1,53 @@
 var App = Em.Application.create();
 
+App.Config = [
+  { name: "Flinkster",
+    calculator: 'Basic',
+    pricePerKm: 19, 
+    pricePerMinDrive: 3, 
+    pricePerMinPark: 3
+  },
+  { name: "DriveNow",
+    calculator: 'Basic',
+    pricePerKm: 0, 
+    pricePerMinDrive: 29, 
+    pricePerMinPark: 10
+  },
+  { name: "ZebraMobil",
+    calculator: 'ZebraMobil',
+    pricePerKm: 0,
+    pricePerKmAfter150: 10,
+    pricePerMinDrive: 25,
+    pricePerMinPark: 10,
+    pricePerMinParkCheap: 3,
+  }
+];
+
 App.Calc = Ember.Object.extend({
-
-  distance: null,
-  timeDriven: null,
-  timeParked: null,
-
+  config: {},
   cost: function(distance, timeDriven, timeParked) {
     return (this._calcDistance(distance) + this._calcTime(timeDriven, timeParked)) / 100;
   },
+  name: function() {
+    return this.get('config').name;
+  }.property('name'),
   _calcDistance: function(distance) {
-    return (distance * this.get('pricePerKm'));
+    return (distance * this.config.pricePerKm);
   },
   _calcTime: function(timeDriven, timeParked) {
-    return (timeDriven * this.get('pricePerMinDrive')) + 
-      (timeParked * this.get('pricePerMinPark'));
+    return (timeDriven * this.config.pricePerMinDrive) + 
+      (timeParked * this.config.pricePerMinPark);
   } 
 });
 
-// extend() makes classes and inherits
-App.Calc.Flinkster = App.Calc.extend({
-  name: "Flinkster",
-  pricePerKm: 19,
-  pricePerMinDrive: 3,
-  pricePerMinPark: 3
-});
-
-App.Calc.DriveNow = App.Calc.extend({
-  name: "DriveNow",
-  pricePerKm: 0,
-  pricePerMinDrive: 29,
-  pricePerMinPark: 10
-});
+App.Calc.Basic = App.Calc.extend();
 
 App.Calc.ZebraMobil = App.Calc.extend({
-  name: "ZebraMobil",
-  
-  pricePerKm: 0,
-  pricePerKmAfter150: 10,
-  
-  pricePerMinDrive: 25,
-  
-  pricePerMinPark: 10,
-  pricePerMinParkCheap: 3,
-  
   _calcDistance: function(distance) {
     if (distance <= 150) { 
       return this._super(distance);
     } else {
-      return this._super(150) + ((distance-150) * this.get('pricePerKmAfter150'));
+      return this._super(150) + ((distance-150) * this.config.pricePerKmAfter150);
     }
   },
   /*
@@ -75,12 +74,6 @@ App.Calc.ZebraMobil = App.Calc.extend({
 // create() makes instances
 App.calcController = Ember.Object.create({
   
-  _calculators: [
-    App.Calc.Flinkster,
-    App.Calc.DriveNow,
-    App.Calc.ZebraMobil
-  ],
-  
   distance: null,
   timeTotal: null,
   timeParked: null,
@@ -95,14 +88,22 @@ App.calcController = Ember.Object.create({
       return [];
     }
     self = this;
-    return this.get('_calculators').map(function(klass) {
-      var calc = klass.create();
+    return this._calculators().map(function(calc) {
       return { 
         name: calc.name, 
         cost: calc.cost(self.get('distance'), self.timeDriven(), self.get('timeParked'))
       };
     })
-  }.property('distance', 'timeTotal', 'timeParked').cacheable()
+  }.property('distance', 'timeTotal', 'timeParked').cacheable(),
+  
+  _calculators: function() {
+    return App.Config.map(function(providerConfig) {
+      console.log(providerConfig);
+      return App.Calc[providerConfig['calculator']].create({config: providerConfig});
+    });
+  }
+  
+  
   
 });
 
