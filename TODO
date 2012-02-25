@@ -1,0 +1,4 @@
+- add correct calc for drivenow 
+- integrate km calculation by google routing (from:, to:)
+- some design
+- add correct calc for zebramobil
